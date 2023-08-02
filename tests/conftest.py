@@ -29,52 +29,30 @@ GTFS = DATA_DIRECTORY / "Helsinki" / "GTFS.zip"
 POPULATION_GRID = DATA_DIRECTORY / "Helsinki" / "population_grid_2020.gpkg"
 
 
-ORIGINS_INVALID_NO_ID = (
-    DATA_DIRECTORY / "test_data" / "test_invalid_points_no_id_column.geojson"
-)
-ORIGINS_INVALID_DUPLICATE_IDS = (
-    DATA_DIRECTORY / "test_data" / "test_invalid_points_duplicate_ids.geojson"
-)
+ORIGINS_INVALID_NO_ID = DATA_DIRECTORY / "test_data" / "test_invalid_points_no_id_column.geojson"
+ORIGINS_INVALID_DUPLICATE_IDS = DATA_DIRECTORY / "test_data" / "test_invalid_points_duplicate_ids.geojson"
 ORIGINS_VALID_IDS = DATA_DIRECTORY / "test_data" / "test_valid_points_data.geojson"
-SINGLE_VALID_ORIGIN = (
-    DATA_DIRECTORY / "test_data" / "test_valid_single_point_data.geojson"
-)
+SINGLE_VALID_ORIGIN = DATA_DIRECTORY / "test_data" / "test_valid_single_point_data.geojson"
+
+GTFS_CALENDAR_DATES_ONLY = DATA_DIRECTORY / "test_data" / "test_gtfs_calendar_dates_only.zip"
 
 
 R5_JAR_URL = "https://github.com/conveyal/r5/releases/download/v6.9/r5-v6.9-all.jar"
 R5_JAR_SHA256 = "a7e1c5ff8786a9fb9191073b8f31a6933b862f44b9ff85b2c00a68c85491274d"
 R5_JAR_SHA256_INVALID = "adfadsfadsfadsfasdfasdf"
-R5_JAR_SHA256_GITHUB_ERROR_MESSAGE_WHEN_POSTING = (
-    "14aa2347be79c280e4d0fd3a137fb8f5bf2863261a1e48e1a122df1a52a0f453"
-)
+R5_JAR_SHA256_GITHUB_ERROR_MESSAGE_WHEN_POSTING = "14aa2347be79c280e4d0fd3a137fb8f5bf2863261a1e48e1a122df1a52a0f453"
 
 
-SNAPPED_POPULATION_GRID_POINTS = (
-    DATA_DIRECTORY / "test_data" / "test_snapped_population_grid_centroids.geojson"
-)
+SNAPPED_POPULATION_GRID_POINTS = DATA_DIRECTORY / "test_data" / "test_snapped_population_grid_centroids.geojson"
 WALKING_TIMES_SNAPPED = DATA_DIRECTORY / "test_data" / "test_walking_times_snapped.csv"
-WALKING_TIMES_NOT_SNAPPED = (
-    DATA_DIRECTORY / "test_data" / "test_walking_times_not_snapped.csv"
-)
-WALKING_DETAILS_SNAPPED = (
-    DATA_DIRECTORY / "test_data" / "test_walking_details_snapped.csv"
-)
-WALKING_DETAILS_NOT_SNAPPED = (
-    DATA_DIRECTORY / "test_data" / "test_walking_details_not_snapped.csv"
-)
+WALKING_TIMES_NOT_SNAPPED = DATA_DIRECTORY / "test_data" / "test_walking_times_not_snapped.csv"
+WALKING_DETAILS_SNAPPED = DATA_DIRECTORY / "test_data" / "test_walking_details_snapped.csv"
+WALKING_DETAILS_NOT_SNAPPED = DATA_DIRECTORY / "test_data" / "test_walking_details_not_snapped.csv"
 
-DETAILED_ITINERARIES_BICYCLE = (
-    DATA_DIRECTORY / "test_data" / "test_detailed_itineraries_bicycle.gpkg.zip"
-)
-DETAILED_ITINERARIES_CAR = (
-    DATA_DIRECTORY / "test_data" / "test_detailed_itineraries_car.gpkg.zip"
-)
-DETAILED_ITINERARIES_TRANSIT = (
-    DATA_DIRECTORY / "test_data" / "test_detailed_itineraries_transit.gpkg.zip"
-)
-DETAILED_ITINERARIES_WALK = (
-    DATA_DIRECTORY / "test_data" / "test_detailed_itineraries_walk.gpkg.zip"
-)
+DETAILED_ITINERARIES_BICYCLE = DATA_DIRECTORY / "test_data" / "test_detailed_itineraries_bicycle.gpkg.zip"
+DETAILED_ITINERARIES_CAR = DATA_DIRECTORY / "test_data" / "test_detailed_itineraries_car.gpkg.zip"
+DETAILED_ITINERARIES_TRANSIT = DATA_DIRECTORY / "test_data" / "test_detailed_itineraries_transit.gpkg.zip"
+DETAILED_ITINERARIES_WALK = DATA_DIRECTORY / "test_data" / "test_detailed_itineraries_walk.gpkg.zip"
 
 
 @pytest.fixture
@@ -126,6 +104,11 @@ def gtfs_file():
     yield GTFS
 
 
+@pytest.fixture()
+def gtfs_file_with_calendar_dates_only():
+    yield GTFS_CALENDAR_DATES_ONLY
+
+
 @pytest.fixture
 def not_a_gtfs_file():
     yield OSM_PBF
@@ -167,9 +150,7 @@ def population_grid():
 @pytest.fixture(scope="session")
 def population_grid_points(population_grid):
     population_grid_points = population_grid.copy()
-    population_grid_points.geometry = population_grid_points.geometry.to_crs(
-        "EPSG:3067"
-    ).centroid.to_crs("EPSG:4326")
+    population_grid_points.geometry = population_grid_points.geometry.to_crs("EPSG:3067").centroid.to_crs("EPSG:4326")
     yield population_grid_points
 
 
@@ -256,9 +237,7 @@ def transport_network(transport_network_from_test_files):
 def transport_network_from_test_directory():
     import r5py
 
-    transport_network = r5py.TransportNetwork.from_directory(
-        DATA_DIRECTORY / "Helsinki"
-    )
+    transport_network = r5py.TransportNetwork.from_directory(DATA_DIRECTORY / "Helsinki")
     yield transport_network
 
     del transport_network
@@ -285,6 +264,19 @@ def transport_network_from_test_files_without_gtfs():
     import r5py
 
     transport_network = r5py.TransportNetwork(OSM_PBF, [])
+    yield transport_network
+
+    del transport_network
+
+    time.sleep(0.5)
+    jpype.java.lang.System.gc()
+
+
+@pytest.fixture(scope="session")
+def transport_network_from_test_files_with_calendar_date_only_gtfs():
+    import r5py
+
+    transport_network = r5py.TransportNetwork(OSM_PBF, [GTFS_CALENDAR_DATES_ONLY])
     yield transport_network
 
     del transport_network
